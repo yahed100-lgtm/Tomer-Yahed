@@ -8,21 +8,17 @@ import torch.nn.functional as F
 import matplotlib.pyplot as plt
 
 # =====================================================================
-# 1. תשתית והגדרות בסיס
+# 1. תשתית והגדרות בסיס - הוגדר Seed קבוע לשחזור מדויק
 # =====================================================================
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-torch.manual_seed(42)  # הגדרת Seed קבוע היא חובה בשחזור מדעי כדי להבטיח שהגרף ייראה בדיוק אותו דבר בכל הרצה.
+torch.manual_seed(42)
 
 
 # =====================================================================
-# 2. הכנת הנתונים: Permuted MNIST (הטריק של המאמר המקורי)
+# 2. הכנת הנתונים: Permuted MNIST (ערבוב פיקסלים מדויק)
 # =====================================================================
-# למה Permuted? במאמר המקורי, כדי לייצר משימות חדשות מבלי לשנות את מבנה הרשת,
-# החוקרים פשוט "ערבבו" את סדר הפיקסלים של התמונות. עבור הרשת, זה נראה כמו משימה חדשה לגמרי.
 def get_permuted_mnist(permutation=None):
     transforms_list = [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
-
-    # אם קיבלנו וקטור ערבוב, נשנה את מיקום הפיקסלים בתמונה
     if permutation is not None:
         transforms_list.append(transforms.Lambda(lambda x: x.view(-1)[permutation].view(1, 28, 28)))
 
@@ -32,17 +28,17 @@ def get_permuted_mnist(permutation=None):
     return DataLoader(train_ds, batch_size=256, shuffle=True), DataLoader(test_ds, batch_size=256, shuffle=False)
 
 
+print(f"Using device: {device}")
 print("Preparing Permuted MNIST tasks...")
-task1_train, task1_test = get_permuted_mnist(None)  # משימה A: התמונות המקוריות ללא ערבוב
-task2_train, task2_test = get_permuted_mnist(torch.randperm(784))  # משימה B: ערבוב אקראי של כל 784 הפיקסלים
-task3_train, task3_test = get_permuted_mnist(torch.randperm(784))  # משימה C: ערבוב אקראי שונה
+task1_train, task1_test = get_permuted_mnist(None)
+task2_train, task2_test = get_permuted_mnist(torch.randperm(784))
+task3_train, task3_test = get_permuted_mnist(torch.randperm(784))
 tasks = [(task1_train, task1_test), (task2_train, task2_test), (task3_train, task3_test)]
 
 
 # =====================================================================
-# 3. ארכיטקטורת המודל (MLP)
+# 3. ארכיטקטורת המודל (2 שכבות נסתרות של 400 נוירונים כמו במאמר)
 # =====================================================================
-# שחזור מדויק של הרשת מהמאמר: רשת מרובת שכבות (MLP) עם שתי שכבות נסתרות של 400 נוירונים.
 class MLP(nn.Module):
     def __init__(self):
         super().__init__()
@@ -50,21 +46,19 @@ class MLP(nn.Module):
             nn.Flatten(),
             nn.Linear(784, 400), nn.ReLU(),
             nn.Linear(400, 400), nn.ReLU(),
-            nn.Linear(400, 10)  # 10 מחלקות בסוף (עבור 10 הספרות)
+            nn.Linear(400, 10)
         )
 
     def forward(self, x): return self.fc(x)
 
 
 # =====================================================================
-# 4. הלב של הפרויקט: אלגוריתם EWC
+# 4. אלגוריתם EWC (חישוב מטריצת פישר והוספת ה-Penalty)
 # =====================================================================
 class EWC:
     def __init__(self, model, dataloader):
         self.model = model
-        # 1. שמירת עוגן: שומרים את המשקולות האופטימליות של המשימה שכבר למדנו.
         self.params = {n: p.clone().detach() for n, p in model.named_parameters() if p.requires_grad}
-        # 2. חישוב פישר: מוצאים אילו משקולות היו קריטיות להצלחה של המשימה הקודמת.
         self.fisher = self._diag_fisher(dataloader)
 
     def _diag_fisher(self, dataloader):
@@ -74,22 +68,19 @@ class EWC:
             img, lbl = img.to(device), lbl.to(device)
             self.model.zero_grad()
             out = self.model(img)
-            # לפי המאמר, הפישר האמפירי מחושב מתוך נגזרת הלוג-הסתברות
+            # שימוש בנגזרת של הלוג-הסתברות לפי הנוסחה המתמטית במאמר
             loss = F.nll_loss(F.log_softmax(out, dim=1), out.argmax(dim=1))
             loss.backward()
 
-            # צבירת ריבוע הגרדיאנטים (זה הקירוב למטריצת פישר)
             for n, p in self.model.named_parameters():
                 if p.requires_grad and p.grad is not None:
                     fisher[n].data += p.grad.data ** 2
 
-        # מיצוע על פני כל הנתונים
         for n in fisher:
             fisher[n].data /= len(dataloader)
         return fisher
 
     def penalty(self, model):
-        # חישוב ה"קנס": אם משקולת חשובה (פישר גבוה) זזה הרבה מהעוגן שלה, ה-Loss יקפוץ לשמיים.
         loss = 0
         for n, p in model.named_parameters():
             if n in self.params:
@@ -98,92 +89,100 @@ class EWC:
 
 
 # =====================================================================
-# 5. ניהול הניסוי המרכזי (Baseline vs. EWC)
+# 5. ניהול הניסוי המרכזי (אימון עמוק - 20 Epochs למשימה)
 # =====================================================================
 def run_experiment(use_ewc=False):
     model = MLP().to(device)
-    optimizer = optim.SGD(model.parameters(), lr=0.01)
-    history = []
+    # Learning Rate אגרסיבי (0.1) כדי להגיע ל-98% ולייצר שכחה חדה ב-SGD
+    optimizer = optim.SGD(model.parameters(), lr=0.1)
+
+    history = {0: [], 1: [], 2: []}
     ewc_list = []
 
     for t_idx, (train_loader, _) in enumerate(tasks):
-        print(f"Training Task {t_idx + 1} ({'EWC Protection' if use_ewc else 'SGD Baseline'})...")
-        # 10 איטרציות (Epochs) מספיקות כדי לאפשר ל-SGD לדרוס את הידע הישן
-        for epoch in range(10):
+        print(f"\nTraining Task {t_idx + 1} ({'EWC' if use_ewc else 'SGD Baseline'})...")
+        for epoch in range(20):
             model.train()
-            for img, lbl in train_loader:
+            for batch_idx, (img, lbl) in enumerate(train_loader):
                 img, lbl = img.to(device), lbl.to(device)
                 optimizer.zero_grad()
                 loss = F.cross_entropy(model(img), lbl)
 
-                # הוספת ה"קנס" של EWC לפונקציית ה-Loss הרגילה
                 if use_ewc:
                     for ewc in ewc_list:
-                        loss += 2000 * ewc.penalty(model)  # Lambda = 2000 לאיזון הגמישות והיציבות
+                        # הלמבדה הוגדלה ל-15,000 כדי למנוע שכחה לחלוטין כמו בקו האדום במאמר
+                        loss += 15000 * ewc.penalty(model)
 
                 loss.backward()
-
-                # Gradient Clipping: מונע מהגרדיאנטים להתפוצץ (בעיה נפוצה בשילוב עונשים גבוהים)
+                # Gradient Clipping מונע קריסה מתמטית בגלל הלמבדה הגדולה
                 torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=10.0)
-
                 optimizer.step()
 
-            # הערכת הביצועים *רק* על משימה A כדי לעקוב אחרי השכחה
+            # הערכת הביצועים על כל המשימות
             model.eval()
-            correct, total = 0, 0
             with torch.no_grad():
-                for img, lbl in tasks[0][1]:
-                    img, lbl = img.to(device), lbl.to(device)
-                    correct += (model(img).argmax(1) == lbl).sum().item()
-                    total += lbl.size(0)
-            history.append(100 * correct / total)
+                for eval_t_idx in range(3):
+                    correct, total = 0, 0
+                    if eval_t_idx > t_idx:
+                        history[eval_t_idx].append(float('nan'))
+                        continue
 
-        # בסיום למידת המשימה, מחשבים את מטריצת הפישר שלה כדי להגן עליה במשימה הבאה
+                    for img, lbl in tasks[eval_t_idx][1]:
+                        img, lbl = img.to(device), lbl.to(device)
+                        correct += (model(img).argmax(1) == lbl).sum().item()
+                        total += lbl.size(0)
+                    history[eval_t_idx].append(100 * correct / total)
+
+            print(f"  Epoch {epoch + 1}/20 - Task A Acc: {history[0][-1]:.1f}%")
+
         if use_ewc and t_idx < 2:
-            print("Calculating Fisher Information Matrix for task protection...")
+            print("Calculating Fisher Information Matrix (This takes a moment)...")
             ewc_list.append(EWC(model, train_loader))
 
     return history
 
 
 # =====================================================================
-# 6. הרצה וציור הגרף (קוסמטיקה זהה למאמר המקורי)
+# 6. ציור הגרף המושלם לפי פרופורציות המאמר המקורי
 # =====================================================================
 if __name__ == '__main__':
-    print("=== Phase 1: SGD Baseline (Catastrophic Forgetting) ===")
+    print("=== Phase 1: Training SGD Baseline ===")
     history_sgd = run_experiment(use_ewc=False)
 
-    print("\n=== Phase 2: EWC (Memory Retention) ===")
+    print("\n=== Phase 2: Training EWC ===")
     history_ewc = run_experiment(use_ewc=True)
 
-    plt.figure(figsize=(10, 5))  # פרופורציות דומות למאמר
+    fig, axes = plt.subplots(3, 1, figsize=(8, 6), sharex=True)
+    epochs_range = range(1, 61)
+    task_names = ['Task A', 'Task B', 'Task C']
 
-    epochs_range = range(1, 31)
+    for i in range(3):
+        ax = axes[i]
+        # צבעי קווים המדמים את הצבעים במאמר, כולל עובי
+        ax.plot(epochs_range, history_sgd[i], color='#4A70B0', label='SGD', linewidth=2)
+        ax.plot(epochs_range, history_ewc[i], color='#C84A48', label='EWC', linewidth=2)
 
-    # הסרתי את ה-markers (הנקודות העבות) כדי לקבל קו חלק וזורם כמו בפרסום אקדמי
-    # שימוש בצבעים הקלאסיים של DeepMind
-    plt.plot(epochs_range, history_sgd, color='#4A70B0', label='SGD', linewidth=2.5)
-    plt.plot(epochs_range, history_ewc, color='#C84A48', label='EWC', linewidth=2.5)
+        # קווים מקווקוים בדיוק במעבר בין המשימות (20 ו-40)
+        ax.axvline(x=20.5, color='gray', linestyle='--', alpha=0.7)
+        ax.axvline(x=40.5, color='gray', linestyle='--', alpha=0.7)
 
-    # סימון גבולות המשימות בקווי מקווקוים עדינים
-    plt.axvline(x=10.5, color='gray', linestyle='--', alpha=0.7)
-    plt.axvline(x=20.5, color='gray', linestyle='--', alpha=0.7)
+        ax.set_ylabel(task_names[i], fontsize=12)
+        ax.set_ylim(80, 102)
 
-    # מיקום הטקסט בזהירות שלא יחתך
-    plt.text(5.5, 98, 'train A', fontsize=12, ha='center', color='black')
-    plt.text(15.5, 98, 'train B', fontsize=12, ha='center', color='black')
-    plt.text(25.5, 98, 'train C', fontsize=12, ha='center', color='black')
+        # הסרת מסגרות למראה אקדמי ו"נקי" (Spines)
+        ax.spines['top'].set_visible(False)
+        ax.spines['right'].set_visible(False)
 
-    # הגבלת ציר Y מ-80 ל-100 בדיוק כמו במאמר המקורי (0.8 עד 1.0)
-    plt.ylim(80, 100)
+    axes[0].text(10.5, 105, 'train A', fontsize=12, ha='center')
+    axes[0].text(30.5, 105, 'train B', fontsize=12, ha='center')
+    axes[0].text(50.5, 105, 'train C', fontsize=12, ha='center')
 
-    plt.ylabel('Fraction correct (Task A %)', fontsize=11)
-    plt.xlabel('Training time (Epochs)', fontsize=11)
+    axes[2].set_xlabel('Training time', fontsize=12)
 
-    # הסרת הרשת (Grid) כדי לתת מראה נקי כמו במאמר המקורי
-    plt.grid(False)
-    plt.legend(loc='lower left', frameon=False, fontsize=11)
+    # מיקום מקרא הגרף בצד ימין כמו במאמר
+    axes[0].legend(loc='lower left', bbox_to_anchor=(1.0, 0.5), frameon=False)
 
     plt.tight_layout()
-    plt.savefig('figure_1A_publication_ready.png', dpi=300)  # איכות גבוהה
+    plt.savefig('figure_2A_perfect.png', dpi=300)
+    print("\nDone! Perfect Graph saved as 'figure_2A_perfect.png'")
     plt.show()
