@@ -11,6 +11,21 @@
 - **Algorithm:** The EWC algorithm calculates the Fisher Information Matrix after each task to identify critical weights. A penalty is added to the loss function to protect these weights during subsequent tasks.
 
 ============================================
+## Why We Chose This Paper
+
+We chose this paper because it does not present only an abstract mathematical solution to catastrophic forgetting, but instead builds on a deep and fascinating biological idea.
+
+The authors examined how the human brain preserves important memories over time, even while learning new information, and translated that principle into a computational algorithm called **Elastic Weight Consolidation (EWC)**.
+
+What made this paper especially interesting to us is that the algorithm can be understood through an intuitive **"spring" analogy**: important parameters in the network are given a kind of restoring force that prevents them from changing too much while the model learns new tasks.
+
+Instead of allowing new learning to overwrite previous knowledge, the algorithm tries to preserve the most critical parts of what has already been learned.
+
+The connection between **machine learning, mathematics, and biological inspiration from the human brain** is what makes this paper unique in our eyes.
+
+For us, this is a particularly compelling perspective: learning from the most effective learning system in nature — the **human brain** — and translating those principles into an algorithm for neural networks.
+
+============================================
 **Requirements:**
 - Python 3.x
 - torch, torchvision
@@ -49,6 +64,25 @@ As per the project requirements, a traditional summary report is replaced with f
 **מערך הנתונים ושיטת העבודה:**
 - **מערך הנתונים (Permuted MNIST):** כדי לדמות למידה של משימות חדשות ללא שינוי ארכיטקטורת הרשת, השתמשנו בשיטת Permuted MNIST (כפי שבוצע במאמר). משימה A היא ה-MNIST המקורי. משימות B ו-C נוצרות על ידי ערבוב אקראי וקבוע של פיקסלי התמונות.
 - **האלגוריתם (EWC):** לאחר למידת כל משימה, האלגוריתם מחשב את מטריצת המידע של פישר (Fisher Information Matrix) כדי לזהות אילו משקולות ברשת היו קריטיות להצלחת המשימה. בלמידת המשימות הבאות, מתווסף "קנס" (Penalty) לפונקציית ההפסד שמונע שינויים דרסטיים במשקולות החשובות הללו.
+
+
+
+============================================
+
+## למה בחרנו במאמר הזה
+
+בחרנו במאמר הזה משום שהוא לא מציג רק פתרון מתמטי מופשט לבעיית השכחה הקטסטרופלית, אלא נשען על רעיון עמוק ומעניין מהעולם הביולוגי.
+
+הכותבים בחנו כיצד המוח האנושי מצליח לשמר זיכרונות חשובים לאורך זמן, גם כאשר הוא לומד מידע חדש, והפכו את העיקרון הזה לאלגוריתם חישובי בשם **Elastic Weight Consolidation (EWC)**.
+
+מה שהפך את המאמר למעניין במיוחד מבחינתנו הוא שהאלגוריתם ניתן להבנה דרך דימוי אינטואיטיבי של **"קפיץ"**: פרמטרים חשובים ברשת מקבלים מעין כוח מחזיר, שמונע מהם להשתנות יותר מדי בזמן למידת משימות חדשות.
+
+במקום לאפשר ללמידה חדשה לדרוס ידע קודם, האלגוריתם מנסה לשמר את החלקים הקריטיים של מה שכבר נלמד.
+
+החיבור בין **למידת מכונה, מתמטיקה והשראה ביולוגית מהמוח האנושי** הוא מה שהופך את המאמר הזה לייחודי בעינינו.
+
+מבחינתנו, זו זווית מרתקת במיוחד: ללמוד ממערכת הלמידה היעילה ביותר בטבע — **המוח האנושי** — ולתרגם את העקרונות שלה לאלגוריתם עבור רשתות נוירונים.
+
 
 ============================================
 **דרישות מערכת:**
