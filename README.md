@@ -47,7 +47,7 @@ For us, this is a particularly compelling perspective: learning from the most ef
 ============================================
 **AI Collaboration & Logs (תיעוד עבודה מול AI):**
 As per the project requirements, a traditional summary report is replaced with full AI interaction documentation.
-- **Logs Location:** All transcripts and problem-solving processes with the AI are saved in the `AI_Logs/` directory in this repository.
+- **Logs Location:** All transcripts and problem-solving processes with the AI are saved in the `AI_LOGS/` directory in this repository.
 - **AI Contribution:** AI was used to deeply analyze the mathematical differences between Split MNIST and Permuted MNIST, debug gradient explosion issues during sequential training, tune hyperparameters (e.g., EWC lambda, learning rate), and format the matplotlib output to match academic publication standards.
 
 
@@ -106,5 +106,5 @@ As per the project requirements, a traditional summary report is replaced with f
 ============================================
 **תיעוד שילוב בינה מלאכותית (AI Logs):**
 בהתאם לדרישות הפרויקט, דוח הסיכום המסורתי הוחלף בתיעוד מלא של תהליך העבודה מול כלי בינה מלאכותית.
-- **מיקום התיעוד:** כל השיחות, פתרון התקלות והתכנון מול ה-AI שמורים בתיקיית `AI_Logs/` בפרויקט זה.
+- **מיקום התיעוד:** כל השיחות, פתרון התקלות והתכנון מול ה-AI שמורים בתיקיית `AI_LOGS/` בפרויקט זה.
 - **תרומת ה-AI:** נעזרתי בבינה מלאכותית כדי לנתח לעומק את ההבדלים המתמטיים והמעשיים בין Split MNIST ל-Permuted MNIST, לפתור בעיות של התפוצצות גרדיאנטים (Gradient Explosion) במהלך אימון רציף, לכייל היפר-פרמטרים (כגון מקדם הלמבדה של EWC), ולעצב את הגרפים (Matplotlib) ברמה אקדמית הזהה למאמר המקורי.
