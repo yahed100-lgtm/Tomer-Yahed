@@ -23,7 +23,7 @@ Instead of allowing new learning to overwrite previous knowledge, the algorithm 
 
 The connection between **machine learning, mathematics, and biological inspiration from the human brain** is what makes this paper unique in our eyes.
 
-For us, this is a particularly compelling perspective: learning from the most effective learning system in nature — the **human brain** — and translating those principles into an algorithm for neural networks.
+For us, this is a particularly compelling perspective: learning from the most effective learning system in nature  the **human brain**  and translating those principles into an algorithm for neural networks.
 
 ============================================
 **Requirements:**
@@ -81,7 +81,7 @@ As per the project requirements, a traditional summary report is replaced with f
 
 החיבור בין **למידת מכונה, מתמטיקה והשראה ביולוגית מהמוח האנושי** הוא מה שהופך את המאמר הזה לייחודי בעינינו.
 
-מבחינתנו, זו זווית מרתקת במיוחד: ללמוד ממערכת הלמידה היעילה ביותר בטבע — **המוח האנושי** — ולתרגם את העקרונות שלה לאלגוריתם עבור רשתות נוירונים.
+מבחינתנו, זו זווית מרתקת במיוחד: ללמוד ממערכת הלמידה היעילה ביותר בטבע **המוח האנושי** ולתרגם את העקרונות שלה לאלגוריתם עבור רשתות נוירונים.
 
 
 ============================================
