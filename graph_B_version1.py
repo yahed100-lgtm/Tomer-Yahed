@@ -1,3 +1,11 @@
+# =========================================================
+# שחזור Figure B ממאמר EWC על Permuted MNIST
+# הקוד מריץ שלושה ניסויים:
+# 1. Single-task reference — מודל נפרד לכל משימה, קו שחור מקווקו
+# 2. SGD + Dropout — מודל אחד שנלמד ברצף, קו כחול
+# 3. EWC — מודל אחד שנלמד ברצף עם ענישה על שינוי משקולות חשובות, קו אדום
+# =========================================================
+
 import time
 import copy
 import numpy as np
@@ -10,27 +18,27 @@ import torchvision
 import matplotlib.pyplot as plt
 
 # =========================================================
-# CONFIG — controlled next test from best result
+# הגדרות הניסוי — הערכים שנבחרו לפי הריצה שנתנה את הגרף הכי טוב
 # =========================================================
-MAX_TASKS = 10
+MAX_TASKS = 10          # מספר המשימות הרציפות ב-Permuted MNIST
 
-BATCH_SIZE = 256
-WIDTH = 1500
-MAX_EPOCHS = 100
-PATIENCE = 5
+BATCH_SIZE = 256       # גודל batch באימון
+WIDTH = 1500           # מספר נוירונים בכל שכבה חבויה
+MAX_EPOCHS = 100      # מספר epochs לכל משימה
+PATIENCE = 5          # לא בשימוש בגרסה הזו, נשאר מהניסויים הקודמים
 
-LR_SINGLE = 0.001
-LR_DROPOUT = 0.003
-LR_EWC = 0.001
-MOMENTUM = 0.9
+LR_SINGLE = 0.001    # learning rate לאימון single-task
+LR_DROPOUT = 0.003   # learning rate ל-baseline עם dropout
+LR_EWC = 0.001       # learning rate לאימון עם EWC
+MOMENTUM = 0.9       # momentum עבור SGD
 
-# First controlled test: only change from best code
-EWC_LAMBDA = 12000
+# מקדם הענישה של EWC — הערך שנבחר אחרי ניסויים, נתן את התוצאה הטובה ביותר
+EWC_LAMBDA = 12000  # חוזק הענישה של EWC
 
-VAL_FRACTION = 0.1
-SEEDS = [0]
+VAL_FRACTION = 0.1   # אחוז הדאטה שמופרד ל-validation
+SEEDS = [0]            # seed יחיד כדי לקצר זמן ריצה
 
-NUM_WORKERS = 0
+NUM_WORKERS = 0       # מספר workers ל-DataLoader; 0 מתאים ל-Windows/Kaggle פשוט
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 print("Using device:", device)
@@ -38,8 +46,9 @@ if torch.cuda.is_available():
     print("GPU:", torch.cuda.get_device_name(0))
 
 # =========================================================
-# DATA
+# טעינת הנתונים ובניית משימות Permuted MNIST
 # =========================================================
+# טוען את MNIST, מנרמל את הפיקסלים, ומחזיר train/test מלאים
 def load_base_mnist():
     train_ds = torchvision.datasets.MNIST(root="./data", train=True, download=True)
     test_ds = torchvision.datasets.MNIST(root="./data", train=False, download=True)
@@ -59,6 +68,7 @@ def load_base_mnist():
 BASE_X_TRAIN, BASE_Y_TRAIN, BASE_X_TEST, BASE_Y_TEST = load_base_mnist()
 
 
+# קובע seed כדי שהריצה תהיה כמה שיותר שחזורית
 def set_all_seeds(seed):
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -66,6 +76,7 @@ def set_all_seeds(seed):
         torch.cuda.manual_seed_all(seed)
 
 
+# יוצר 10 משימות: הראשונה MNIST רגיל, והשאר עם פרמוטציה אקראית קבועה לפיקסלים
 def make_permutations(seed, max_tasks=10):
     g = torch.Generator()
     g.manual_seed(seed)
@@ -77,12 +88,14 @@ def make_permutations(seed, max_tasks=10):
     return perms
 
 
+# מחיל את הפרמוטציה על תמונות MNIST: הופך לוקטור, מסדר פיקסלים מחדש, ומחזיר לצורת 28x28
 def apply_permutation(x, perm):
     flat = x.view(x.size(0), -1)
     flat = flat[:, perm]
     return flat.view(-1, 1, 28, 28)
 
 
+# בונה DataLoaders לכל משימה: train, validation, test
 def build_task_loaders(perms, seed):
     train_loaders = []
     val_loaders = []
@@ -134,8 +147,9 @@ def build_task_loaders(perms, seed):
     return train_loaders, val_loaders, test_loaders
 
 # =========================================================
-# MODELS
+# הגדרת המודלים
 # =========================================================
+# רשת MLP רגילה — משמשת ל-Single Task ול-EWC
 class MLP(nn.Module):
     def __init__(self, width=WIDTH):
         super().__init__()
@@ -152,6 +166,7 @@ class MLP(nn.Module):
         return self.net(x)
 
 
+# רשת MLP עם Dropout — משמשת כ-baseline של SGD+dropout
 class DropoutMLP(nn.Module):
     def __init__(self, width=WIDTH):
         super().__init__()
@@ -171,14 +186,16 @@ class DropoutMLP(nn.Module):
         return self.net(x)
 
 # =========================================================
-# EWC — same version as best-looking code
+# מימוש EWC — אותו מימוש שנתן את התוצאה הוויזואלית הכי טובה
 # =========================================================
+# מחלקה שמחשבת ושומרת Fisher + פרמטרים קודמים לצורך ענישת EWC
 class ConsolidatedEWC:
     def __init__(self, model):
         self.model = model
         self.fisher = None
         self.star_params = None
 
+    # שומר עותק של הפרמטרים הנוכחיים של הרשת אחרי סיום משימה
     def _snapshot_params(self):
         return {
             n: p.clone().detach()
@@ -186,6 +203,7 @@ class ConsolidatedEWC:
             if p.requires_grad
         }
 
+    # מחשב קירוב אלכסוני למטריצת Fisher לפי הגרדיאנטים של loss על הדאטה
     def _diag_fisher(self, dataloader):
         fisher = {
             n: torch.zeros_like(p, device=device)
@@ -216,6 +234,7 @@ class ConsolidatedEWC:
 
         return fisher
 
+    # אחרי כל משימה: מחשבים Fisher חדש ומעדכנים את נקודת העוגן של EWC
     def update_after_task(self, dataloader):
         current_fisher = self._diag_fisher(dataloader)
         current_params = self._snapshot_params()
@@ -227,9 +246,10 @@ class ConsolidatedEWC:
             for n in self.fisher:
                 self.fisher[n] = self.fisher[n] + current_fisher[n]
 
-            # keep same behavior as best result
+            # שומרים את אותו אופן פעולה כמו בקוד שנתן את התוצאה הכי טובה
             self.star_params = current_params
 
+    # מחשב את איבר הענישה של EWC שמונע מהמשקולות לזוז יותר מדי מהערכים הקודמים
     def penalty(self, model):
         if self.fisher is None or self.star_params is None:
             return torch.tensor(0.0, device=device)
@@ -242,8 +262,9 @@ class ConsolidatedEWC:
         return loss
 
 # =========================================================
-# HELPERS
+# פונקציות עזר לאימון ולהערכה
 # =========================================================
+# מחשב accuracy של מודל על DataLoader נתון
 def evaluate(model, loader):
     model.eval()
     correct = 0
@@ -263,6 +284,7 @@ def evaluate(model, loader):
     return correct / total
 
 
+# מחשב ממוצע accuracy על כל המשימות שנלמדו עד עכשיו
 def evaluate_average_seen_tasks(model, loaders, seen_task_count):
     accs = []
     for t in range(seen_task_count):
@@ -270,6 +292,7 @@ def evaluate_average_seen_tasks(model, loaders, seen_task_count):
     return float(np.mean(accs))
 
 
+# מאמן את המודל epoch אחד; אם יש EWC מוסיפים penalty ל-loss
 def train_one_epoch(model, train_loader, optimizer, ewc_obj=None, ewc_lambda=0):
     model.train()
     running_loss = 0.0
@@ -294,6 +317,7 @@ def train_one_epoch(model, train_loader, optimizer, ewc_obj=None, ewc_lambda=0):
     return running_loss / len(train_loader)
 
 
+# מאמן משימה אחת למספר קבוע של epochs
 def train_task_fixed_epochs(model, train_loader, optimizer, epochs, label="", ewc_obj=None, ewc_lambda=0):
     for epoch in range(epochs):
         loss = train_one_epoch(
@@ -306,8 +330,9 @@ def train_task_fixed_epochs(model, train_loader, optimizer, epochs, label="", ew
         print(f"      {label} Epoch {epoch+1}/{epochs} - loss={loss:.4f}")
 
 # =========================================================
-# EXPERIMENTS
+# הרצת שלושת הניסויים: Single-task, SGD+Dropout, EWC
 # =========================================================
+# מאמן מודל נפרד לכל משימה — זה הקו השחור המקווקו בגרף
 def run_single_task_reference(train_loaders, test_loaders):
     task_accs = []
 
@@ -336,6 +361,7 @@ def run_single_task_reference(train_loaders, test_loaders):
     return np.array(cumulative)
 
 
+# מאמן מודל אחד ברצף על כל המשימות עם SGD+Dropout — הקו הכחול
 def run_sgd_dropout_sequential(train_loaders, test_loaders):
     model = DropoutMLP().to(device)
     optimizer = optim.SGD(model.parameters(), lr=LR_DROPOUT, momentum=MOMENTUM)
@@ -359,6 +385,7 @@ def run_sgd_dropout_sequential(train_loaders, test_loaders):
     return np.array(history)
 
 
+# מאמן מודל אחד ברצף עם EWC — הקו האדום
 def run_ewc_sequential(train_loaders, test_loaders):
     model = MLP().to(device)
     optimizer = optim.SGD(model.parameters(), lr=LR_EWC, momentum=MOMENTUM)
@@ -387,8 +414,9 @@ def run_ewc_sequential(train_loaders, test_loaders):
     return np.array(history)
 
 # =========================================================
-# PLOT
+# שרטוט Figure B
 # =========================================================
+# משרטט את הגרף הסופי שמשווה בין EWC, SGD+dropout ו-single task
 def plot_figure_b(single_hist, dropout_hist, ewc_hist):
     x = list(range(2, MAX_TASKS + 1))
 
@@ -416,7 +444,7 @@ def plot_figure_b(single_hist, dropout_hist, ewc_hist):
     plt.show()
 
 # =========================================================
-# MAIN
+# נקודת ההרצה הראשית של הקוד
 # =========================================================
 if __name__ == "__main__":
     total_start = time.time()
