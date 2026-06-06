@@ -161,7 +161,7 @@ Per the project requirements, the traditional written report is replaced by full
 
 # פרויקט שחזור: התגברות על שכחה קטסטרופלית בעזרת EWC
 
-> שחזור מלא של **Figures 1A, 2A ו-2C** מהמאמר של DeepMind:
+> שחזור מלא של **Figures A, B ו-C** מהמאמר של DeepMind:
 > *"Overcoming catastrophic forgetting in neural networks"* (Kirkpatrick et al., 2017).
 
 ---
@@ -194,12 +194,11 @@ Per the project requirements, the traditional written report is replaced by full
 ├── graph A.py              # Figure 1A / 2A — Online EWC מול SGD על 3 משימות עוקבות
 ├── graph_B_version1.py     # Figure 2B  — EWC מול SGD+Dropout על 10 משימות עוקבות
 ├── GraphC.py               # Figure 2C  — ניתוח חפיפת Fisher לפי עומק שכבה
-├── figure_1A_publication_ready.png   # פלט: Figure 1A
 ├── figure_2A_online_perfect.png      # פלט: Figure 2A (Online EWC)
 ├── figure_2A_perfect.png             # פלט: Figure 2A (ריצה חלופית)
 ├── graphC.png                        # פלט: Figure 2C
 ├── Graph_B.jpeg                      # פלט: Figure 2B
-└── AI_LOGS/                          # תיעוד מלא של שיחות עם AI
+└── AI_LOGS/                          # תיעוד שיחות עם AI
 ```
 
 ---
