@@ -150,8 +150,6 @@ Per the project requirements, the traditional written report is replaced by full
 
 - **Log location:** `AI_LOGS/` directory in this repository
 - **How AI was used:**
-  - Analysed the mathematical and practical differences between Split MNIST and Permuted MNIST
-  - Debugged gradient explosion issues that arose during sequential task training
   - Tuned hyperparameters (EWC lambda, learning rate) across all three scripts
   - Designed the Online EWC running-average Fisher update strategy
   - Formatted Matplotlib output to match academic publication standards
@@ -310,8 +308,6 @@ python GraphC.py
 
 - **מיקום התיעוד:** תיקיית `AI_LOGS/` בפרויקט זה
 - **כיצד AI שימש בפרויקט:**
-  - ניתוח מעמיק של ההבדלים בין Split MNIST ל-Permuted MNIST
-  - פתרון בעיות התפוצצות גרדיאנטים במהלך אימון רציף
   - כיוון היפרפרמטרים (lambda של EWC, קצב למידה) בשלושת הסקריפטים
   - עיצוב אסטרטגיית ממוצע הפישר הרץ ב-Online EWC
   - עיצוב גרפים ב-Matplotlib ברמה אקדמית המתאימה לפרסום
