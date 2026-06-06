@@ -33,7 +33,7 @@ The combination of **machine learning, mathematics, and biological inspiration**
 ├── graph A.py              # Figure 1A / 2A — Online EWC vs SGD on 3 sequential tasks
 ├── graph_B_version1.py     # Figure 2B  — EWC vs SGD+Dropout over 10 sequential tasks
 ├── GraphC.py               # Figure 2C  — Layer-wise Fisher overlap analysis
-├── figure_1A_publication_ready.png   # Output: Figure 1A
+  
 ├── figure_2A_online_perfect.png      # Output: Figure 2A (Online EWC variant)
 ├── figure_2A_perfect.png             # Output: Figure 2A (alternate run)
 ├── graphC.png                        # Output: Figure 2C
