@@ -45,7 +45,7 @@ The combination of **machine learning, mathematics, and biological inspiration**
 
 ## Scripts Overview
 
-### `graph A.py` — Figure 1A / 2A: SGD vs Online EWC (3 Tasks)
+### `graph A.py` — Figure A: SGD vs Online EWC (3 Tasks)
 
 Reproduces the core result of the paper: a head-to-head comparison of a vanilla SGD baseline against an **Online EWC** model trained sequentially on 3 Permuted MNIST tasks (20 epochs each).
 
