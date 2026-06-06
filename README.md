@@ -38,7 +38,7 @@ The combination of **machine learning, mathematics, and biological inspiration**
 ├── figure_2A_perfect.png             # Output: Figure 2A (alternate run)
 ├── graphC.png                        # Output: Figure 2C
 ├── Graph_B.jpeg                      # Output: Figure 2B
-└── AI_LOGS/                          # Full AI interaction transcripts
+└── AI_LOGS/                          # AI interaction transcripts
 ```
 
 ---
