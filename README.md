@@ -206,7 +206,7 @@ Per the project requirements, the traditional written report is replaced by full
 
 ## תיאור הסקריפטים
 
-### `graph A.py` — Figure 1A / 2A: SGD מול Online EWC (3 משימות)
+### `graph A.py` — Figure A: SGD מול Online EWC (3 משימות)
 
 משחזר את התוצאה המרכזית של המאמר: השוואה ישירה בין SGD רגיל לבין **Online EWC** על 3 משימות Permuted MNIST עוקבות (20 epochs לכל משימה).
 
