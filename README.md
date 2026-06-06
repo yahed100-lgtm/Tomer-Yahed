@@ -1,6 +1,6 @@
 # Overcoming Catastrophic Forgetting — EWC Reproduction Project
 
-> A full reproduction of **Figures 1A, 2A, and 2C** from Kirkpatrick et al. (2017),  
+> A full reproduction of **Figures A, B, and C** from Kirkpatrick et al. (2017),  
 > *"Overcoming catastrophic forgetting in neural networks"* (DeepMind).
 
 ---
