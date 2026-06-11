@@ -80,8 +80,7 @@ EWC_LAMBDA = 12000  # חוזק הענישה של EWC
 # אחוז הדאטה שיופרד מסט האימון וישמש כ-validation set.
 VAL_FRACTION = 0.1   # אחוז הדאטה שמופרד ל-validation
 
-# רשימת ה-seeds להרצה; כאן יש seed יחיד כדי לקצר את זמן הריצה.
-SEEDS = [0]            # seed יחיד כדי לקצר זמן ריצה
+SEEDS = [0, 1, 2]      # שלושה seeds כדי לקבל ממוצע אמין יותר
 
 # מספר תהליכי worker לטעינת דאטה; 0 פשוט ונוח במיוחד בסביבות כמו Windows או Kaggle.
 NUM_WORKERS = 0       # מספר workers ל-DataLoader; 0 מתאים ל-Windows/Kaggle פשוט
